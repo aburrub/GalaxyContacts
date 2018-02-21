@@ -1,4 +1,6 @@
-﻿Public Class Form1
+﻿Imports System.IO
+
+Public Class Form1
     Private obj As ImportVcf = Nothing
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -21,11 +23,17 @@
     Private Sub RemoveDuplicatesButton_Click(sender As Object, e As EventArgs) Handles RemoveDuplicatesButton.Click
         Try
             If Not String.IsNullOrEmpty(PathTextBox.Text) Then
-                Dim outputFile As String = Me.OpenFileDialog1.FileName + ".RemoveDuplicates.vcf"
+                Dim outputFile As String = GetDynamicOutputFileName(Me.OpenFileDialog1.FileName)
                 obj = New ImportVcf(Me.PathTextBox.Text, Me.KeepPhotosCheckBox.Checked, GetInputStyle)
                 obj.CountryCodeStyle = GetInputStyle()
                 obj.CountryCode = Me.CountryComboBox.SelectedValue
                 obj.importData()
+                Try
+                    outputFile = String.Format("{0}\{1}_{2}.vcf", Path.GetDirectoryName(outputFile), Me.OpenFileDialog1.SafeFileName.Substring(0, Me.OpenFileDialog1.SafeFileName.Length - 4), DateTime.Now.ToString("yyyyMMdd_hhmmssf"))
+                Catch ex As Exception
+                    outputFile = String.Format("{0}\{1}.vcf", Path.GetDirectoryName(outputFile), Guid.NewGuid.ToString + ".vcf")
+                End Try
+
                 obj.BuildFile(outputFile)
                 SetConsoleText("Successfully Generated" + Environment.NewLine + outputFile)
             Else
@@ -37,6 +45,16 @@
 
 
     End Sub
+
+    Private Function GetDynamicOutputFileName(ByVal SourceFile As String) As String
+        Try
+            Return String.Format("{0}\{1}_{2}.vcf", Path.GetDirectoryName(SourceFile), Me.OpenFileDialog1.SafeFileName.Substring(0, Me.OpenFileDialog1.SafeFileName.Length - 4), DateTime.Now.ToString("yyyyMMdd_hhmmssf"))
+        Catch ex As Exception
+            Return String.Format("{0}\{1}.vcf", Path.GetDirectoryName(SourceFile), Guid.NewGuid.ToString + ".vcf")
+        End Try
+    End Function
+
+
 
     Private Function GetInputStyle() As CountryCodeStyle
         If StyleComboBox.Text = "Remove Country Code" Then

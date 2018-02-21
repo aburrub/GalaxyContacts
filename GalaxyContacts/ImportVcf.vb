@@ -75,8 +75,15 @@
                     Me._VCFs.Add(String.Format("{0} {1}", vcf.FirstName, vcf.LastName), vcf)
                 End If
 
+                If vcf.FirstName Is Nothing Then
+                    Dim G As Guid = Guid.NewGuid
+                    Me._VCFs.Add(G.ToString, vcf)
+                End If
             End If
 
+            If vcf IsNot Nothing Then
+                vcf.OriginalVcfCard += l + Environment.NewLine
+            End If
         End While
 
 
@@ -209,51 +216,57 @@
     End Property
 
     Public Sub BuildFile(ByVal OutputFile As String)
+
         Dim wr As New IO.StreamWriter(OutputFile, False)
         For Each vcfObj As Vcf In Me._VCFs.Values
-            wr.WriteLine("BEGIN:VCARD")
-            wr.WriteLine(String.Format("N:{0};{1};{2};;", vcfObj.LastName, vcfObj.FirstName, vcfObj.MiddleName))
-            If String.IsNullOrEmpty(vcfObj.MiddleName) Then
-                wr.WriteLine(String.Format("FN:{0} {1}", vcfObj.FirstName, vcfObj.LastName))
+            If vcfObj.FirstName Is Nothing Then
+                wr.WriteLine(vcfObj.OriginalVcfCard)
             Else
-                wr.WriteLine(String.Format("FN:{0} {1} {2}", vcfObj.FirstName, vcfObj.MiddleName, vcfObj.LastName))
-            End If
+                wr.WriteLine("BEGIN:VCARD")
+                wr.WriteLine(String.Format("N:{0};{1};{2};;", vcfObj.LastName, vcfObj.FirstName, vcfObj.MiddleName))
+                If String.IsNullOrEmpty(vcfObj.MiddleName) Then
+                    wr.WriteLine(String.Format("FN:{0} {1}", vcfObj.FirstName, vcfObj.LastName))
+                Else
+                    wr.WriteLine(String.Format("FN:{0} {1} {2}", vcfObj.FirstName, vcfObj.MiddleName, vcfObj.LastName))
+                End If
 
-            For i As Integer = 0 To vcfObj.Cells.Count - 1
-                Dim type As String = If(i = vcfObj.Cells.Count - 1, "HOME", "CELL")
-                wr.WriteLine(String.Format("TEL;{0}:{1}", type, vcfObj.Cells(i)))
-            Next
-            For Each Email As String In vcfObj.Emails
-                wr.WriteLine(String.Format("EMAIL;HOME:{0}", Email))
-            Next
-
-            If vcfObj.Organization IsNot Nothing Then
-                wr.WriteLine(String.Format("ORG:{0}", vcfObj.Organization))
-            End If
-
-            If vcfObj.TITLE IsNot Nothing Then
-                wr.WriteLine(String.Format("TITLE:{0}", vcfObj.TITLE))
-            End If
-
-
-            If vcfObj.BDAY IsNot Nothing Then
-                wr.WriteLine(String.Format("BDAY:{0}", vcfObj.BDAY))
-            End If
-
-
-            If vcfObj.URL IsNot Nothing Then
-                wr.WriteLine(String.Format("URL:{0}", vcfObj.URL))
-            End If
-
-
-
-            If Me.ImportPhotos Then
-                For Each pl As String In vcfObj.PhotoLines
-                    wr.WriteLine(pl)
+                For i As Integer = 0 To vcfObj.Cells.Count - 1
+                    Dim type As String = If(i = vcfObj.Cells.Count - 1, "HOME", "CELL")
+                    wr.WriteLine(String.Format("TEL;{0}:{1}", type, vcfObj.Cells(i)))
                 Next
+                For Each Email As String In vcfObj.Emails
+                    wr.WriteLine(String.Format("EMAIL;HOME:{0}", Email))
+                Next
+
+                If vcfObj.Organization IsNot Nothing Then
+                    wr.WriteLine(String.Format("ORG:{0}", vcfObj.Organization))
+                End If
+
+                If vcfObj.TITLE IsNot Nothing Then
+                    wr.WriteLine(String.Format("TITLE:{0}", vcfObj.TITLE))
+                End If
+
+
+                If vcfObj.BDAY IsNot Nothing Then
+                    wr.WriteLine(String.Format("BDAY:{0}", vcfObj.BDAY))
+                End If
+
+
+                If vcfObj.URL IsNot Nothing Then
+                    wr.WriteLine(String.Format("URL:{0}", vcfObj.URL))
+                End If
+
+
+
+                If Me.ImportPhotos Then
+                    For Each pl As String In vcfObj.PhotoLines
+                        wr.WriteLine(pl)
+                    Next
+                End If
+
+                wr.WriteLine("END:VCARD")
             End If
 
-            wr.WriteLine("END:VCARD")
         Next
 
         wr.Close()

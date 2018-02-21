@@ -9,5 +9,5 @@
     Public BDAY As String
     Public URL As String
     Public PhotoLines As New List(Of String)
-
+    Public OriginalVcfCard As String
 End Class
